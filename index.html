@@ -647,9 +647,15 @@
                 "The one you're running from is you."
             </p>
 
-            <button onclick="startQuiz()" class="btn-start">
-                BEGIN
-            </button>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <button onclick="startQuiz()" class="btn-start">
+                    BEGIN
+                </button>
+                
+                <button onclick="showRatingScreen()" class="btn-start">
+                    RATE FILM
+                </button>
+            </div>
         </div>
 
         <!-- VIEW 2: QUIZ -->
@@ -727,8 +733,13 @@
                             <p style="color: var(--bright-red); font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; font-weight: bold;">Digital Premiere Ticket</p>
                         </div>
                         <div style="text-align: right;">
-                            <p style="font-size: 1.5rem; font-weight: bold;">NOV 22</p>
-                            <p style="font-size: 0.7rem; color: var(--grey); letter-spacing: 0.1em;">06:30 PM IST</p>
+                            <p style="font-size: clamp(0.8rem, 2vw, 1rem); font-weight: bold; margin-bottom: 0.2rem;">STREAMING IN</p>
+                            <div style="display: flex; align-items: center; gap: 0.3rem; justify-content: flex-end;">
+                                <svg width="clamp(16px, 3vw, 20px)" height="clamp(16px, 3vw, 20px)" viewBox="0 0 24 24" fill="#FF0000" style="flex-shrink: 0;">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                <p style="font-size: clamp(0.6rem, 1.5vw, 0.7rem); color: var(--grey); letter-spacing: 0.1em;">YOUTUBE</p>
+                            </div>
                         </div>
                     </div>
 
