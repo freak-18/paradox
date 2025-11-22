@@ -921,7 +921,7 @@
     <!-- LOGIC ENGINE -->
     <script>
         // --- CONFIGURATION ---
-        const YOUTUBE_PREMIERE_URL = "https://youtu.be/USeHnoEITLk?si=1tdaZvax0T9Kd_ZB"; 
+        const YOUTUBE_PREMIERE_URL = "https://youtu.be/vOG2dHxVfVU"; 
         
         const questions = [
             {
@@ -1322,7 +1322,7 @@
             document.getElementById('youtube-link').href = YOUTUBE_PREMIERE_URL;
 
             // Generate QR Code using API
-            const qrData = encodeURIComponent('https://www.youtube.com/@kathaikural.official');
+            const qrData = encodeURIComponent('https://youtu.be/vOG2dHxVfVU');
             document.getElementById('ticket-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&color=000000&bgcolor=FFFFFF`;
 
             viewTicket.classList.remove('hidden');
