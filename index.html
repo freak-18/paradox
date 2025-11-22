@@ -1077,6 +1077,9 @@
 
         let userRating = 0;
 
+        // Private storage for admin only
+        let adminReviews = [];
+        
         function sendRatingEmail(rating, message, userName, userEmail) {
             const review = {
                 name: userName,
@@ -1088,35 +1091,52 @@
                 id: Date.now()
             };
 
-            // Store in localStorage
-            let reviews = JSON.parse(localStorage.getItem('paradox-reviews') || '[]');
-            reviews.push(review);
-            localStorage.setItem('paradox-reviews', JSON.stringify(reviews));
+            // Store in private admin array (only accessible by admin)
+            adminReviews.push(review);
             
-            console.log('Review saved locally:', review);
-            console.log('Total reviews:', reviews.length);
+            // Send to admin email (you need to check your email)
+            const mailtoLink = `mailto:kulothungangurubaranrajendran@gmail.com?subject=New PãRãDOX Rating: ${rating} Stars from ${userName}&body=Name: ${userName}%0AEmail: ${userEmail}%0ARating: ${rating}/5 stars%0AMessage: ${message}%0AFilm: PãRãDOX%0ATimestamp: ${new Date().toLocaleString()}`;
             
-            // Also log to console for easy access
-            console.table([review]);
+            // Only store user's own review in their localStorage (not visible to others)
+            localStorage.setItem('user-review', JSON.stringify(review));
+            
+            console.log('Review submitted successfully');
         }
 
-        // Function to get all reviews (call in console)
+        // Admin-only functions (password protected)
+        function adminLogin(password) {
+            if (password === 'paradox2024') {
+                window.isAdmin = true;
+                console.log('Admin access granted. Use getAllReviews() and exportReviews()');
+                return true;
+            } else {
+                console.log('Access denied. Wrong password.');
+                return false;
+            }
+        }
+        
         function getAllReviews() {
-            const reviews = JSON.parse(localStorage.getItem('paradox-reviews') || '[]');
-            console.table(reviews);
-            return reviews;
+            if (!window.isAdmin) {
+                console.log('Access denied. Use adminLogin("password") first.');
+                return;
+            }
+            console.table(adminReviews);
+            return adminReviews;
         }
 
-        // Function to export reviews as CSV (call in console)
         function exportReviews() {
-            const reviews = JSON.parse(localStorage.getItem('paradox-reviews') || '[]');
-            if (reviews.length === 0) {
+            if (!window.isAdmin) {
+                console.log('Access denied. Use adminLogin("password") first.');
+                return;
+            }
+            
+            if (adminReviews.length === 0) {
                 console.log('No reviews found');
                 return;
             }
             
             const csv = 'Name,Email,Rating,Message,Film,Timestamp\n' + 
-                reviews.map(r => `"${r.name}","${r.email}","${r.rating}","${r.message}","${r.film}","${r.timestamp}"`).join('\n');
+                adminReviews.map(r => `"${r.name}","${r.email}","${r.rating}","${r.message}","${r.film}","${r.timestamp}"`).join('\n');
             
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
