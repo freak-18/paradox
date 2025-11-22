@@ -10,6 +10,7 @@
     
     <!-- HTML2Canvas for Ticket Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Formspree for sending emails (1000 free emails/month) -->
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1056,6 +1057,35 @@
 
         let userRating = 0;
 
+        function sendRatingEmail(rating, message) {
+            const formData = new FormData();
+            formData.append('rating', `${rating}/5 stars`);
+            formData.append('message', message);
+            formData.append('film', 'PãRãDOX');
+            formData.append('timestamp', new Date().toLocaleString());
+            formData.append('_replyto', 'kulothungangurubaranrajendran@gmail.com');
+            formData.append('_subject', `New PãRãDOX Rating: ${rating} Stars`);
+
+
+            
+            // Web3Forms (1000 emails/month)
+            formData.append('access_key', 'd140c852-c105-4d1d-8eae-ce032ba6190f');
+            formData.append('email', 'kulothungangurubaranrajendran@gmail.com');
+            
+            fetch('https://api.web3forms.com/submit', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Rating email sent successfully!');
+                } else {
+                    console.log('Failed to send rating email');
+                }
+            }).catch(error => {
+                console.log('Error sending rating email:', error);
+            });
+        }
+
         function showRatingScreen() {
             playSound('click');
             document.getElementById('view-rating').classList.remove('hidden');
@@ -1103,6 +1133,7 @@
                         ratingText.textContent = ratingMessages[userRating];
                         
                         setTimeout(() => {
+                            sendRatingEmail(userRating, ratingMessages[userRating]);
                             ratingSubmitted.classList.remove('hidden');
                         }, 500);
                     }
