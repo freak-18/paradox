@@ -10,7 +10,7 @@
     
     <!-- HTML2Canvas for Ticket Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Formspree for sending emails (1000 free emails/month) -->
+    <!-- Local storage for collecting reviews -->
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -413,6 +413,18 @@
             text-shadow: 0 0 15px rgba(224,59,46,0.6);
         }
 
+        /* Input Fields */
+        input:focus {
+            outline: none;
+            border-color: var(--red) !important;
+            box-shadow: 0 0 10px rgba(184,0,0,0.3);
+        }
+
+        input::placeholder {
+            color: var(--grey);
+            opacity: 0.7;
+        }
+
         /* SVGs */
         svg {
             width: 24px;
@@ -774,7 +786,15 @@
         <div style="width: 100%; max-width: 500px;">
             <div class="text-center" style="margin-bottom: 2rem;">
                 <h3 style="font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--bright-red);">RATE PãRãDOX</h3>
-                <p style="color: var(--grey); font-size: 0.9rem;">How did this experience resonate with you?</p>
+                <p style="color: var(--grey); font-size: 0.9rem;">Share your details and rate the experience</p>
+            </div>
+
+            <div id="user-inputs" style="margin-bottom: 2rem;">
+                <input type="text" id="user-name" placeholder="Your Name" style="width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--dark-grey); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; font-size: 1rem;">
+                <input type="email" id="user-email" placeholder="Your Email" style="width: 100%; padding: 0.75rem; background: var(--dark-grey); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; font-size: 1rem;">
+                <div id="error-message" class="hidden" style="background: rgba(224,59,46,0.1); border: 1px solid rgba(224,59,46,0.3); padding: 1rem; border-radius: 4px; margin-top: 1rem; text-align: center;">
+                    <p style="color: var(--bright-red); font-weight: 600; font-size: 0.9rem;">⚠ Please fill in both your name and email before rating</p>
+                </div>
             </div>
 
             <div class="star-rating" id="star-rating" style="display: flex; justify-content: center; gap: 0.5rem; font-size: 3rem; margin: 2rem 0;">
@@ -1057,38 +1077,70 @@
 
         let userRating = 0;
 
-        function sendRatingEmail(rating, message) {
-            const formData = new FormData();
-            formData.append('rating', `${rating}/5 stars`);
-            formData.append('message', message);
-            formData.append('film', 'PãRãDOX');
-            formData.append('timestamp', new Date().toLocaleString());
-            formData.append('_replyto', 'kulothungangurubaranrajendran@gmail.com');
-            formData.append('_subject', `New PãRãDOX Rating: ${rating} Stars`);
+        function sendRatingEmail(rating, message, userName, userEmail) {
+            const review = {
+                name: userName,
+                email: userEmail,
+                rating: `${rating}/5 stars`,
+                message: message,
+                film: 'PãRãDOX',
+                timestamp: new Date().toLocaleString(),
+                id: Date.now()
+            };
 
+            // Store in localStorage
+            let reviews = JSON.parse(localStorage.getItem('paradox-reviews') || '[]');
+            reviews.push(review);
+            localStorage.setItem('paradox-reviews', JSON.stringify(reviews));
+            
+            console.log('Review saved locally:', review);
+            console.log('Total reviews:', reviews.length);
+            
+            // Also log to console for easy access
+            console.table([review]);
+        }
 
+        // Function to get all reviews (call in console)
+        function getAllReviews() {
+            const reviews = JSON.parse(localStorage.getItem('paradox-reviews') || '[]');
+            console.table(reviews);
+            return reviews;
+        }
+
+        // Function to export reviews as CSV (call in console)
+        function exportReviews() {
+            const reviews = JSON.parse(localStorage.getItem('paradox-reviews') || '[]');
+            if (reviews.length === 0) {
+                console.log('No reviews found');
+                return;
+            }
             
-            // Web3Forms (1000 emails/month)
-            formData.append('access_key', 'd140c852-c105-4d1d-8eae-ce032ba6190f');
-            formData.append('email', 'kulothungangurubaranrajendran@gmail.com');
+            const csv = 'Name,Email,Rating,Message,Film,Timestamp\n' + 
+                reviews.map(r => `"${r.name}","${r.email}","${r.rating}","${r.message}","${r.film}","${r.timestamp}"`).join('\n');
             
-            fetch('https://api.web3forms.com/submit', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    console.log('Rating email sent successfully!');
-                } else {
-                    console.log('Failed to send rating email');
-                }
-            }).catch(error => {
-                console.log('Error sending rating email:', error);
-            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'paradox-reviews.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function showRatingScreen() {
             playSound('click');
             document.getElementById('view-rating').classList.remove('hidden');
+            
+            // Reset form
+            userRating = 0;
+            document.getElementById('user-name').value = '';
+            document.getElementById('user-email').value = '';
+            document.getElementById('user-inputs').style.display = 'block';
+            document.getElementById('error-message').classList.add('hidden');
+            document.getElementById('rating-submitted').classList.add('hidden');
+            clearStars();
+            document.getElementById('rating-text').textContent = 'Tap to rate';
+            
             initializeRating();
         }
 
@@ -1127,13 +1179,33 @@
 
                 star.addEventListener('click', () => {
                     if (userRating === 0) {
+                        const userName = document.getElementById('user-name').value.trim();
+                        const userEmail = document.getElementById('user-email').value.trim();
+                        const errorMessage = document.getElementById('error-message');
+                        
+                        if (!userName || !userEmail) {
+                            errorMessage.classList.remove('hidden');
+                            setTimeout(() => errorMessage.classList.add('hidden'), 3000);
+                            return;
+                        }
+                        
+                        if (!userEmail.includes('@')) {
+                            errorMessage.innerHTML = '<p style="color: var(--bright-red); font-weight: 600; font-size: 0.9rem;">⚠ Please enter a valid email address</p>';
+                            errorMessage.classList.remove('hidden');
+                            setTimeout(() => errorMessage.classList.add('hidden'), 3000);
+                            return;
+                        }
+                        
                         userRating = index + 1;
                         playSound('select');
                         highlightStars(userRating);
                         ratingText.textContent = ratingMessages[userRating];
                         
+                        // Hide input fields after successful rating
+                        document.getElementById('user-inputs').style.display = 'none';
+                        
                         setTimeout(() => {
-                            sendRatingEmail(userRating, ratingMessages[userRating]);
+                            sendRatingEmail(userRating, ratingMessages[userRating], userName, userEmail);
                             ratingSubmitted.classList.remove('hidden');
                         }, 500);
                     }
