@@ -392,6 +392,26 @@
             z-index: 2;
         }
 
+        /* Star Rating */
+        .star {
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .star:hover {
+            color: var(--bright-red);
+            transform: scale(1.1);
+            text-shadow: 0 0 15px rgba(224,59,46,0.6);
+        }
+
+        .star.active {
+            color: var(--bright-red);
+            text-shadow: 0 0 15px rgba(224,59,46,0.6);
+        }
+
         /* SVGs */
         svg {
             width: 24px;
@@ -513,6 +533,11 @@
             
             .modal-overlay {
                 padding: 0.5rem;
+            }
+            
+            .star-rating {
+                font-size: 2.5rem !important;
+                gap: 0.3rem !important;
             }
         }
         
@@ -660,6 +685,7 @@
             
         </div>
 
+
     </div>
 
     <!-- VIEW 4: TICKET MODAL -->
@@ -726,16 +752,48 @@
                     SAVE TICKET IMAGE
                 </a>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <a id="youtube-link" href="#" target="_blank" class="btn-secondary">
                         GO TO PREMIERE
                     </a>
+                    <button onclick="showRatingScreen()" class="btn-secondary">
+                        RATE FILM
+                    </button>
                     <button onclick="window.location.reload()" class="btn-secondary">
                         RESTART
                     </button>
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- VIEW 5: RATING SCREEN -->
+    <div id="view-rating" class="modal-overlay hidden fade-in">
+        <div style="width: 100%; max-width: 500px;">
+            <div class="text-center" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--bright-red);">RATE PãRãDOX</h3>
+                <p style="color: var(--grey); font-size: 0.9rem;">How did this experience resonate with you?</p>
+            </div>
+
+            <div class="star-rating" id="star-rating" style="display: flex; justify-content: center; gap: 0.5rem; font-size: 3rem; margin: 2rem 0;">
+                <span class="star" data-rating="1">★</span>
+                <span class="star" data-rating="2">★</span>
+                <span class="star" data-rating="3">★</span>
+                <span class="star" data-rating="4">★</span>
+                <span class="star" data-rating="5">★</span>
+            </div>
+            
+            <p id="rating-text" style="text-align: center; color: var(--grey); font-size: 1rem; margin-bottom: 2rem; min-height: 1.5rem;">Tap to rate</p>
+
+            <div id="rating-submitted" class="hidden" style="background: rgba(184,0,0,0.1); border: 1px solid rgba(184,0,0,0.3); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
+                <p style="color: var(--bright-red); font-weight: 600; margin-bottom: 0.5rem;">✓ Rating Submitted</p>
+                <p style="color: var(--grey); font-size: 0.9rem;">Thank you for your feedback!</p>
+            </div>
+
+            <button onclick="closeRating()" class="btn-secondary" style="width: 100%; margin-top: 1rem;">
+                CLOSE
+            </button>
         </div>
     </div>
 
@@ -992,6 +1050,81 @@
 
             document.getElementById('personality-line').innerText = mainLine;
             document.getElementById('micro-line').innerText = microLine;
+        }
+
+
+
+        let userRating = 0;
+
+        function showRatingScreen() {
+            playSound('click');
+            document.getElementById('view-rating').classList.remove('hidden');
+            initializeRating();
+        }
+
+        function closeRating() {
+            playSound('click');
+            document.getElementById('view-rating').classList.add('hidden');
+        }
+
+        function initializeRating() {
+            const stars = document.querySelectorAll('.star');
+            const ratingText = document.getElementById('rating-text');
+            const ratingSubmitted = document.getElementById('rating-submitted');
+
+            const ratingMessages = {
+                1: "Not for me",
+                2: "It was okay", 
+                3: "Pretty good",
+                4: "Really enjoyed it",
+                5: "Absolutely loved it!"
+            };
+
+            stars.forEach((star, index) => {
+                star.addEventListener('mouseenter', () => {
+                    if (userRating === 0) {
+                        highlightStars(index + 1);
+                        ratingText.textContent = ratingMessages[index + 1];
+                    }
+                });
+
+                star.addEventListener('mouseleave', () => {
+                    if (userRating === 0) {
+                        clearStars();
+                        ratingText.textContent = "Tap to rate";
+                    }
+                });
+
+                star.addEventListener('click', () => {
+                    if (userRating === 0) {
+                        userRating = index + 1;
+                        playSound('select');
+                        highlightStars(userRating);
+                        ratingText.textContent = ratingMessages[userRating];
+                        
+                        setTimeout(() => {
+                            ratingSubmitted.classList.remove('hidden');
+                        }, 500);
+                    }
+                });
+            });
+        }
+
+        function highlightStars(count) {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                star.classList.remove('active');
+                if (index < count) {
+                    star.classList.add('active');
+                }
+            });
+        }
+
+        function clearStars() {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => {
+                star.classList.remove('active');
+            });
         }
 
         function generateAndShowTicket() {
