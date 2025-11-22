@@ -1077,8 +1077,14 @@
 
         let userRating = 0;
 
-        // Private storage for admin only
-        let adminReviews = [];
+        // Simple encryption function
+        function encrypt(text) {
+            return btoa(text).split('').reverse().join('');
+        }
+        
+        function decrypt(text) {
+            return atob(text.split('').reverse().join(''));
+        }
         
         function sendRatingEmail(rating, message, userName, userEmail) {
             const review = {
@@ -1091,10 +1097,33 @@
                 id: Date.now()
             };
 
-            // Store in private admin array (only accessible by admin)
+            // Store encrypted reviews
+            let adminReviews = [];
+            try {
+                const encrypted = localStorage.getItem('px_sys_cache') || '';
+                if (encrypted) {
+                    adminReviews = JSON.parse(decrypt(encrypted));
+                }
+            } catch (e) {
+                adminReviews = [];
+            }
             adminReviews.push(review);
+            localStorage.setItem('px_sys_cache', encrypt(JSON.stringify(adminReviews)));
             
-            // Send to admin email (you need to check your email)
+            // Send to Google Sheets (collects from ALL devices)
+            fetch('https://script.google.com/macros/s/AKfycbxFKlFdKRAyEmBht8F3Wd4Jzv5kfYQ1EzlnBmKwkgn0W2aL5uuC8ZB0DjWzarVlcD0wsA/exec', {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(review)
+            }).then(() => {
+                console.log('Review sent to Google Sheets successfully');
+            }).catch(e => {
+                console.log('Google Sheets error:', e);
+                console.log('Backup: Review saved locally only');
+            });
+            
+            // Backup: Send to admin email
             const mailtoLink = `mailto:kulothungangurubaranrajendran@gmail.com?subject=New PãRãDOX Rating: ${rating} Stars from ${userName}&body=Name: ${userName}%0AEmail: ${userEmail}%0ARating: ${rating}/5 stars%0AMessage: ${message}%0AFilm: PãRãDOX%0ATimestamp: ${new Date().toLocaleString()}`;
             
             // Only store user's own review in their localStorage (not visible to others)
@@ -1120,8 +1149,15 @@
                 console.log('Access denied. Use adminLogin("password") first.');
                 return;
             }
-            console.table(adminReviews);
-            return adminReviews;
+            try {
+                const encrypted = localStorage.getItem('px_sys_cache') || '';
+                const adminReviews = encrypted ? JSON.parse(decrypt(encrypted)) : [];
+                console.table(adminReviews);
+                return adminReviews;
+            } catch (e) {
+                console.log('No reviews found or data corrupted');
+                return [];
+            }
         }
 
         function exportReviews() {
@@ -1130,10 +1166,19 @@
                 return;
             }
             
-            if (adminReviews.length === 0) {
-                console.log('No reviews found');
+            try {
+                const encrypted = localStorage.getItem('px_sys_cache') || '';
+                const adminReviews = encrypted ? JSON.parse(decrypt(encrypted)) : [];
+                if (adminReviews.length === 0) {
+                    console.log('No reviews found');
+                    return;
+                }
+            } catch (e) {
+                console.log('No reviews found or data corrupted');
                 return;
             }
+            
+            const adminReviews = JSON.parse(decrypt(localStorage.getItem('px_sys_cache')));
             
             const csv = 'Name,Email,Rating,Message,Film,Timestamp\n' + 
                 adminReviews.map(r => `"${r.name}","${r.email}","${r.rating}","${r.message}","${r.film}","${r.timestamp}"`).join('\n');
